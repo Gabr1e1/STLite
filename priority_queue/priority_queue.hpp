@@ -63,23 +63,27 @@ private:
 			node *u = cur->firstChild;
 			while (u != nullptr)
 			{
-				if (u->father == cur) clear(u);
-				u = u->rightBrother;
+				if (u->father == cur)
+				{
+					node *tmp = u->rightBrother;
+					clear(u);
+					u = tmp;
+				}
 			}
 		}
 		delete cur;
 		__size = 0;
 	}
 
-	void addAll(Queue *q, node *cur)
+	void addAll(priority_queue *que, node *cur)
 	{
-		q.push(cur);
+		que->push(cur->val);
 		if (cur->firstChild != nullptr)
 		{
 			node *u = cur->firstChild;
 			while (u != nullptr)
 			{
-				if (u->father == cur) addAll(u);
+				addAll(que, u);
 				u = u->rightBrother;
 			}
 		}
@@ -88,26 +92,27 @@ private:
 public:
 	priority_queue() : root(nullptr), __size(0) { }
 
-	priority_queue(const priority_queue &other) 
+	priority_queue(const priority_queue &other) : root(nullptr), __size(0)
 	{
-		Queue *q = new Queue();
-		addAll(other->root);
-		while (!q.empty()) addSon(q.pop());
-        delete q;
+		addAll(this, other.root);
 	}
 
 	~priority_queue() 
 	{
 		clear(root);
-	}
+		root = nullptr;
+		__size = 0;
+    }
 
 	priority_queue &operator=(const priority_queue &other) 
 	{
+		if (this == &other) return *this;
 		clear(root);
-		Queue *q = new Queue();
-		addAll(other->root);
-		while (!q.empty()) addSon(q.pop());
-        delete q;
+		root = nullptr;
+		__size = 0;
+		
+		addAll(this, other.root);
+		return *this;
 	}
 
 private:
@@ -117,9 +122,8 @@ private:
 		if (p->firstChild == nullptr) p->firstChild = u;
 		else
 		{
-			node *tmp = p->firstChild;
-			while (tmp->rightBrother != nullptr) tmp = tmp->rightBrother;
-			tmp->rightBrother = u;
+            u->rightBrother = p->firstChild;
+			p->firstChild = u;
 		}
 	}
 
@@ -156,8 +160,8 @@ public:
 	{
 		if (empty()) throw container_is_empty();
 		__size--;
+        Queue *q = new Queue();
 		node *u = root->firstChild;
-		Queue *q = new Queue();
 		while (u != nullptr)
 		{
 			if (u->father == root) q->push(u);
@@ -189,7 +193,10 @@ public:
 
 	void merge(priority_queue &other) 
 	{
-		__merge(root, other.root);
+		root = __merge(root, other.root);
+		__size += other.__size;
+		other.__size = 0;
+		other.root = nullptr;
 	}
 };
 
