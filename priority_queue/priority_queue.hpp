@@ -13,41 +13,9 @@ template<typename T, class Compare = std::less<T>>
 class priority_queue {
 	struct node
 	{
-		node *firstChild, *rightBrother, *father;
+		node *firstChild, *rightBrother, *father, *tmpPrev;
 		T val;
 		node(const T &_val) : firstChild(nullptr), rightBrother(nullptr), father(nullptr), val(_val) { }
-	};
-	struct Queue
-	{
-		struct qNode
-		{
-			qNode *next;
-			node *cur;
-			qNode(node *_cur = nullptr) : next(nullptr), cur(_cur) {}
-		};
-		qNode *head = nullptr, *tail = nullptr;
-		int size = 0;
-
-		bool empty() { return size == 0; }
-		node* pop() 
-		{
-			size--;
-			node* ret = head->cur;
-			auto tmp = head;
-			head = head->next;
-			delete tmp;
-			return ret;
-		}
-		void push(node *t)
-		{
-			if (size == 0)
-			{
-				head = new qNode(t);
-				tail = head;
-			}
-			else tail->next = new qNode(t), tail = tail->next;
-            size++;
-		}
 	};
 
 private:
@@ -160,25 +128,40 @@ public:
 	{
 		if (empty()) throw container_is_empty();
 		__size--;
-        Queue *q = new Queue();
-		node *u = root->firstChild;
-		while (u != nullptr)
+		//left to right
+		node *first = root->firstChild, *second = (first != nullptr ? first->rightBrother : nullptr), *tail = nullptr, *next;
+		delete root;
+
+		if (first != nullptr) first->rightBrother = nullptr;
+		if (second != nullptr) next = second->rightBrother;
+		else next = nullptr;
+		if (second != nullptr) second->rightBrother = nullptr;
+
+		while (first != nullptr && second != nullptr)
 		{
-			if (u->father == root) q->push(u);
-			node *tmp = u->rightBrother;
-            u->father = u->rightBrother = nullptr;
-            u = tmp;
+			node *cur = __merge(first, second);
+			cur->tmpPrev = tail;
+			tail = cur;
+
+			first = next;
+			if (first != nullptr) second = first->rightBrother;
+			else second = nullptr;
+
+			if (first != nullptr) first->rightBrother = nullptr;
+			if (second != nullptr) next = second->rightBrother;
+			else next = nullptr;
+			if (second != nullptr) second->rightBrother = nullptr;
+
 		}
-        node *newRoot = nullptr;
-		while (q->size >= 2)
+		//right to left
+		if (first != nullptr) first->tmpPrev = tail, tail = first;
+		while (tail != nullptr && tail->tmpPrev != nullptr)
 		{
-			node *a = q->pop(), *b = q->pop();
-            q->push(newRoot = __merge(a, b));
+			node *next = tail->tmpPrev->tmpPrev;
+			tail = __merge(tail, tail->tmpPrev);
+			tail->tmpPrev = next;
 		}
-        delete root;
-        if (__size && newRoot == nullptr) newRoot = q->pop();
-        root = newRoot;
-        delete q;
+		root = tail;
 	}
 
 	size_t size() const 
