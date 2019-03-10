@@ -16,7 +16,7 @@ namespace sjtu
 			T data;
 			LLNode *next, *prev;
 			Node *corres;
-			LLNode(const T &_data, Node *fa) : data(_data), next(nullptr), prev(nullptr), corres(fa) {}
+			LLNode(Node *fa, const T &_data) : data(_data), next(nullptr), prev(nullptr), corres(fa) {}
 		};
 		struct LinkedList
 		{
@@ -73,11 +73,11 @@ namespace sjtu
 				size++;
 			}
 
-			void pop_back(const T &value)
+			void pop_back()
 			{
 				size--;
 				if (size == 0) head = tail = nullptr;
-				else tail = tail->next;
+				else tail = tail->prev;
 			}
 		};
 
@@ -151,13 +151,13 @@ namespace sjtu
 		private:
 			LLNode *cur;
 			int curPos;
-			deque *corres;
+			deque<T> *corres;
 
 		public:
 			iterator() = default;
 			iterator(const iterator &o) = default;
 			iterator &operator=(const iterator &o) = default;
-			iterator(LLNode *_cur, int pos, const deque *que) : cur(_cur), curPos(pos), corres(que) {}
+			iterator(LLNode *_cur, int pos, deque *que) : cur(_cur), curPos(pos), corres(que) {}
 
 		private:
 			int getIndex()
@@ -295,7 +295,7 @@ namespace sjtu
 		private:
 			LLNode *cur;
 			int curPos;
-			const deque *corres;
+			const deque<T> *corres;
 
 		public:
 			const_iterator() = default;
@@ -319,7 +319,7 @@ namespace sjtu
 					counter += t->size;
 					t = t->next;
 				}
-				counter += curPos + 1;
+				counter += curPos;
 				return counter;
 			}
 
@@ -431,7 +431,7 @@ namespace sjtu
 			}
 			LLNode *t2 = t->arr->head;
 			for (int i = 0; i < num; i++, t2 = t2->next);
-			return iterator(t2, num - 1, this);
+			return iterator(t2, num, this);
 		}
 
 	public:
@@ -477,25 +477,25 @@ namespace sjtu
 		 * access specified element with bounds checking
 		 * throw index_out_of_bound if out of bound.
 		 */
-		T & at(const size_t &pos)
+		T & at(const int &pos)
 		{
 			if (pos > __size) throw index_out_of_bound();
 			return *find(pos);
 		}
 
-		const T & at(const size_t &pos) const
+		const T & at(const int &pos) const
 		{
 			if (pos > __size) throw index_out_of_bound();
 			return *find(pos);
 		}
 
-		T & operator[](const size_t &pos)
+		T & operator[](const int &pos)
 		{
 			T &ret = at(pos);
 			return ret;
 		}
 
-		const T & operator[](const size_t &pos) const
+		const T & operator[](const int &pos) const
 		{
 			const T& ret = at(pos);
 			return ret;
@@ -522,7 +522,7 @@ namespace sjtu
 			return __size == 0;
 		}
 
-		size_t size() const
+		int size() const
 		{
 			return __size;
 		}
@@ -545,6 +545,8 @@ namespace sjtu
 			if (pos->cur1->next != nullptr) pos->cur1->next->prev = t;
 			else tail = t;
 			pos->cur1->next = t;
+
+			__size++;
 		}
 		/**
 		 * removes specified element at pos.
@@ -558,11 +560,17 @@ namespace sjtu
 			Node *t = split(pos.cur->corres, pos.curPos);
 			t->pop_front();
 			return iterator(t->arr->head, t->arr->size, this);
+			__size--;
 		}
 
 		void push_back(const T &value)
 		{
-			if (tail->size == ChunkSize)
+			if (__size == 0)
+			{
+				tail = new Node();
+				head = tail;
+			}
+			else if (tail->size == ChunkSize)
 			{
 				Node *t = new Node();
 				tail->next = t;
@@ -570,17 +578,24 @@ namespace sjtu
 				tail = t;
 			}
 			tail->arr->push_back(tail, value);
+			__size++;
 		}
 
 		void pop_back()
 		{
 			if (empty()) throw container_is_empty();
 			tail->arr->pop_back();
+			__size--;
 		}
 
 		void push_front(const T &value)
 		{
-			if (head->size == ChunkSize)
+			if (__size == 0)
+			{
+				tail = new Node();
+				head = new Node();
+			}
+			else if (head->size == ChunkSize)
 			{
 				Node *t = new Node();
 				t->next = head;
@@ -588,12 +603,14 @@ namespace sjtu
 				head = t;
 			}
 			head->arr->push_front(tail, value);
+			__size++;
 		}
 
 		void pop_front()
 		{
 			if (empty()) throw container_is_empty();
 			head->arr->pop_front();
+			__size--;
 		}
 	};
 }

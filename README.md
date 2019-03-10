@@ -7,6 +7,8 @@
 + Needn't save father(?)
 
 ## Deque
-### Implementation : Linked list of linked list
+### Implementation : Linked list nested with linked list
+
 ### Things to notice:
 + iterator and const_iterator implementation very ugly
++ size_t not used for simplicity
