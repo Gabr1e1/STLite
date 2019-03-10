@@ -12,3 +12,5 @@
 ### Things to notice:
 + iterator and const_iterator implementation very ugly
 + size_t not used for simplicity
++ TODO : when erase an element no delete
++ TODO : iterator + can be faster
