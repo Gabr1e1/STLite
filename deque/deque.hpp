@@ -28,6 +28,16 @@ namespace sjtu
 				head = copyAll(c, other.head);
 				size = other.size;
 			}
+			~LinkedList()
+			{
+				LLNode *t = head;
+				while (t != nullptr)
+				{
+					LLNode *tmp = t->next;
+					delete t;
+					t = tmp;
+				}
+			}
 
 			//the same copy constructor as type Node
 			LLNode* copyAll(Node *c, LLNode *cur, LLNode *prev = nullptr)
@@ -59,9 +69,18 @@ namespace sjtu
 
 			void pop_front()
 			{
-				if (size == 0) head = tail = nullptr;
-				else head = head->next;
 				size--;
+				if (size == 0)
+				{
+					delete head;
+					head = tail = nullptr;
+				}
+				else
+				{
+					head = head->next;
+					delete head->prev;
+					head->prev = nullptr;
+				}
 			}
 
 			void push_back(Node *c, const T &value)
@@ -82,9 +101,9 @@ namespace sjtu
 
 			void pop_back()
 			{
-				if (size == 0) head = tail = nullptr;
-				else tail = tail->prev;
 				size--;
+				if (size == 0) delete head, head = tail = nullptr;
+				else tail = tail->prev, delete tail->next, tail->next = nullptr;
 			}
 		};
 
@@ -172,6 +191,8 @@ namespace sjtu
 		private:
 			int getIndex() const
 			{
+				if (cur == nullptr && curPos == 0) return corres->__size;
+
 				Node *t = corres->head;
 				int counter = 0;
 				while (t != cur->corres)
@@ -191,11 +212,13 @@ namespace sjtu
 
 			iterator operator+(const int &n) const
 			{
+				if (n == 0) return *this;
 				return corres->find(getIndex() + n);
 			}
 
 			iterator operator-(const int &n) const
 			{
+				if (n == 0) return *this;
 				return corres->find(getIndex() - n);
 			}
 
@@ -248,7 +271,7 @@ namespace sjtu
 
 			iterator& operator--()
 			{
-				if (cur == nullptr) //the end
+				if (cur == nullptr && curPos == 0) //the end
 				{
 					cur = corres->tail->arr->tail;
 					curPos = corres->tail->arr->size - 1;
@@ -279,7 +302,7 @@ namespace sjtu
 			}
 			T* operator->() const noexcept
 			{
-				return cur;
+				return &cur->data;
 			}
 
 			bool operator==(const iterator &rhs) const
@@ -340,12 +363,14 @@ namespace sjtu
 	public:
 		iterator begin()
 		{
-			return iterator(head->arr->head, 0, this);
+			if (__size == 0) return iterator(nullptr, -1, this);
+			else return iterator(head->arr->head, 0, this);
 		}
 
 		const_iterator cbegin() const
 		{
-			return const_iterator(head->arr->head, 0, this);
+			if (__size == 0) return const_iterator(nullptr, -1, this);
+			else return const_iterator(head->arr->head, 0, this);
 		}
 
 		iterator end()
@@ -363,20 +388,21 @@ namespace sjtu
 		{
 			Node *newNode = new Node();
 			LLNode *t = cur->arr->head;
-			for (int i = 0; i <= pos; i++) t = t->next;
+			for (int i = 0; i < pos; i++) t = t->next;
 			newNode->arr->tail = cur->arr->tail;
 			cur->arr->tail = t->prev;
 
-			t->prev->next = nullptr;
+			if (t->prev != nullptr) t->prev->next = nullptr;
 			t->prev = nullptr;
 
 			newNode->arr->head = t;
 			for (auto tmp = newNode->arr->head; tmp != nullptr; tmp = tmp->next) tmp->corres = newNode;
-			newNode->arr->size = cur->arr->size - (pos + 1);
-			cur->arr->size = pos + 1;
+			newNode->arr->size = cur->arr->size - pos;
+			cur->arr->size = pos;
 
 			newNode->next = cur->next;
 			if (cur->next != nullptr) cur->next->prev = newNode;
+			else tail = newNode;
 			cur->next = newNode;
 			newNode->prev = cur;
 
@@ -447,7 +473,17 @@ namespace sjtu
 
 		iterator insert(iterator pos, const T &value)
 		{
-			pos--;
+			//std::cout << "INSERT" << std::endl;
+			if (pos == end())
+			{
+				push_back(value);
+				return iterator(tail->arr->tail, tail->arr->size - 1, this);
+			}
+			if (pos == begin())
+			{
+				push_front(value);
+				return begin();
+			}
 			if (!pos.valid()) throw invalid_iterator();
 			Node *t = split(pos.cur->corres, pos.curPos);
 			t->arr->push_front(t, value);
@@ -464,7 +500,7 @@ namespace sjtu
 		{
 			if (!pos.valid()) throw invalid_iterator();
 			Node *t = split(pos.cur->corres, pos.curPos);
-			t->prev->arr->pop_back();
+			t->arr->pop_front();
 			__size--;
 			return iterator(t->arr->head, 0, this);
 		}
@@ -509,7 +545,7 @@ namespace sjtu
 				head->prev = t;
 				head = t;
 			}
-			head->arr->push_front(tail, value);
+			head->arr->push_front(head, value);
 			__size++;
 		}
 
