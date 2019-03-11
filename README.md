@@ -14,3 +14,4 @@
 + size_t not used for simplicity
 + TODO : when erase an element no delete
 + TODO : iterator + can be faster
++ TODO : doesn't need to make sure that the iterator is always valid
