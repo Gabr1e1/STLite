@@ -590,7 +590,7 @@ namespace sjtu
 			if (pos == end())
 			{
 				push_back(value);
-				return iterator(tail, tail->arr->tail, tail->arr->size - 1, this);
+				return end();
 			}
 			else if (pos == begin())
 			{
@@ -608,6 +608,16 @@ namespace sjtu
 
 		iterator erase(iterator pos)
 		{
+			if (pos == end() - 1)
+			{
+				pop_back();
+				return end();
+			}
+			else if (pos == begin())
+			{
+				pop_front();
+				return begin();
+			}
 			int r = pos.getIndex();
 			if (!pos.valid() || pos.corres != this) throw invalid_iterator();
 			Node *t = split(pos.fa, pos.curPos, pos.cur);
@@ -641,6 +651,7 @@ namespace sjtu
 				delete tail;
 				tail = tmp;
 				if (tail != nullptr) tail->next = nullptr;
+				else head = nullptr;
 			}
 			__size--;
 		}
@@ -669,6 +680,7 @@ namespace sjtu
 				delete head;
 				head = tmp;
 				if (head != nullptr) head->prev = nullptr;
+				else tail = nullptr;
 			}
 			__size--;
 		}
