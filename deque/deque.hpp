@@ -44,13 +44,11 @@ namespace sjtu
 				if (head == nullptr) head = other->head;
 				else tail->next = other->head, other->head->prev = tail;
 				tail = other->tail;
-
 				size += other->size;
 				other->head = other->tail = nullptr;
 				other->size = 0;
 			}
 
-			//the same copy constructor as type Node
 			LLNode* copyAll(LLNode *cur, LLNode *prev = nullptr)
 			{
 				if (cur == nullptr) return nullptr;
@@ -64,11 +62,7 @@ namespace sjtu
 
 			void push_front(const T &value) //enough size for one more element
 			{
-				if (size == 0)
-				{
-					head = new LLNode(value);
-					tail = head;
-				}
+				if (size == 0) head = tail = new LLNode(value);
 				else
 				{
 					LLNode *t = new LLNode(value);
@@ -81,26 +75,16 @@ namespace sjtu
 			void pop_front()
 			{
 				size--;
-				if (size == 0)
-				{
-					delete head;
-					head = tail = nullptr;
-				}
+				if (size == 0) delete head, head = tail = nullptr;
 				else
 				{
-					head = head->next;
-					delete head->prev;
-					head->prev = nullptr;
+					head = head->next, delete head->prev, head->prev = nullptr;
 				}
 			}
 
 			void push_back(const T &value)
 			{
-				if (size == 0)
-				{
-					head = new LLNode(value);
-					tail = head;
-				}
+				if (size == 0) head = tail = new LLNode(value);
 				else
 				{
 					LLNode *t = new LLNode(value);
@@ -127,8 +111,7 @@ namespace sjtu
 
 			Node() : arr(new LinkedList()), next(nullptr), prev(nullptr) {}
 			Node(const Node &other) : arr(new LinkedList(*other.arr)), next(nullptr), prev(nullptr) {}
-			~Node()
-			{
+			~Node() {
 				delete arr;
 			}
 		};
@@ -163,11 +146,8 @@ namespace sjtu
 		{
 			head = copyAll(other.head);
 		}
-
-		~deque()
-		{
+		~deque() {
 			__clear(head);
-			head = tail = nullptr;
 		}
 
 		deque &operator=(const deque &other)
@@ -202,21 +182,16 @@ namespace sjtu
 		private:
 			int getIndex() const
 			{
-				if (cur == nullptr && curPos == 0) return corres->__size;
-
+				if (cur == nullptr && curPos == 0) return corres->__size; //end()
 				Node *t = corres->head;
-				int counter = 0;
-				while (t != fa)
-				{
-					counter += t->arr->size;
-					t = t->next;
-				}
+				int counter;
+				for (counter = 0; t != fa; t = t->next) counter += t->arr->size;
 				counter += curPos;
 				return counter;
 			}
 
 		public:
-			bool valid()
+			bool valid() const
 			{
 				return fa != nullptr && cur != nullptr && curPos < fa->arr->size && corres != nullptr;
 			}
@@ -229,8 +204,7 @@ namespace sjtu
 
 			iterator operator-(const int &n) const
 			{
-				if (n == 0) return *this;
-				return corres->find(getIndex() - n);
+				return *this + (-n);
 			}
 
 			// return the distance between two iterator
@@ -259,18 +233,12 @@ namespace sjtu
 				{
 					if (fa->next == nullptr)
 					{
-						cur = nullptr, curPos = 0;
+						fa = nullptr, cur = nullptr, curPos = 0;
 						return *this;
 					}
-					fa = fa->next;
-					cur = fa->arr->head;
-					curPos = 0;
+					fa = fa->next, cur = fa->arr->head, curPos = 0;
 				}
-				else
-				{
-					cur = cur->next;
-					curPos++;
-				}
+				else cur = cur->next, curPos++;
 				return (*this);
 			}
 
@@ -283,7 +251,8 @@ namespace sjtu
 
 			iterator& operator--()
 			{
-				if (cur == nullptr && curPos == 0) //the end
+				if (corres->empty()) throw invalid_iterator();
+				if (cur == nullptr && curPos == 0) //end() - 1
 				{
 					fa = corres->tail;
 					cur = corres->tail->arr->tail;
@@ -291,15 +260,10 @@ namespace sjtu
 				}
 				else if (cur == fa->arr->head)
 				{
-					fa = fa->prev;
-					cur = fa->arr->tail;
-					curPos = 0;
+					if (fa->prev == nullptr) throw invalid_iterator();
+					fa = fa->prev, cur = fa->arr->tail, curPos = 0;
 				}
-				else
-				{
-					cur = cur->prev;
-					curPos--;
-				}
+				else cur = cur->prev, curPos--;
 				return (*this);
 			}
 
@@ -312,6 +276,7 @@ namespace sjtu
 
 			T& operator*() const
 			{
+				if (!valid()) throw invalid_iterator();
 				return cur->data;
 			}
 			T* operator->() const noexcept
@@ -337,10 +302,10 @@ namespace sjtu
 			}
 		};
 
-		/*
 		class const_iterator
 		{
 		private:
+			Node *fa;
 			LLNode *cur;
 			int curPos;
 			const deque<T> *corres;
@@ -351,16 +316,144 @@ namespace sjtu
 			const_iterator &operator=(const const_iterator &o) = default;
 			const_iterator &operator=(const iterator &o)
 			{
-				cur = o.cur;
-				curPos = o.curPos;
-				corres = o.corres;
+				fa = o.fa, cur = o.cur, curPos = o.curPos, corres = o.corres;
 			}
-			const_iterator(LLNode *_cur, int pos, const deque *que) : cur(_cur), curPos(pos), corres(que) {}
-		*/
+			const_iterator(Node *_fa, LLNode *_cur, int pos, const deque *que) : fa(_fa), cur(_cur), curPos(pos), corres(que) {}
+
+		private:
+			int getIndex() const
+			{
+				if (cur == nullptr && curPos == 0) return corres->__size; //end()
+				Node *t = corres->head;
+				int counter;
+				for (counter = 0; t != fa; t = t->next) counter += t->arr->size;
+				counter += curPos;
+				return counter;
+			}
+
+		public:
+			bool valid() const
+			{
+				return fa != nullptr && cur != nullptr && curPos < fa->arr->size && corres != nullptr;
+			}
+
+			const_iterator operator+(const int &n) const
+			{
+				if (n == 0) return *this;
+				return corres->find(getIndex() + n);
+			}
+
+			const_iterator operator-(const int &n) const
+			{
+				return *this + (-n);
+			}
+
+			// return the distance between two iterator
+			int operator-(const const_iterator &rhs) const
+			{
+				if (corres != rhs.corres) throw invalid_iterator();
+				return getIndex() - rhs.getIndex();
+			}
+
+			const_iterator operator+=(const int &n)
+			{
+				(*this) = (*this) + n;
+				return (*this);
+			}
+
+			const_iterator operator-=(const int &n)
+			{
+				(*this) = (*this) - n;
+				return (*this);
+			}
+
+			const_iterator& operator++()
+			{
+				if (cur == nullptr) throw invalid_iterator();
+				if (cur == fa->arr->tail) //reach the end of the current chunk
+				{
+					if (fa->next == nullptr)
+					{
+						fa = nullptr, cur = nullptr, curPos = 0;
+						return *this;
+					}
+					fa = fa->next, cur = fa->arr->head, curPos = 0;
+				}
+				else cur = cur->next, curPos++;
+				return (*this);
+			}
+
+			const_iterator operator++(int)
+			{
+				iterator tmp = *this;
+				++(*this);
+				return tmp;
+			}
+
+			const_iterator& operator--()
+			{
+				if (corres->empty()) throw invalid_iterator();
+				if (cur == nullptr && curPos == 0) //end() - 1
+				{
+					fa = corres->tail;
+					cur = corres->tail->arr->tail;
+					curPos = corres->tail->arr->size - 1;
+				}
+				else if (cur == fa->arr->head)
+				{
+					if (fa->prev == nullptr) throw invalid_iterator();
+					fa = fa->prev, cur = fa->arr->tail, curPos = 0;
+				}
+				else cur = cur->prev, curPos--;
+				return (*this);
+			}
+
+			const_iterator operator--(int)
+			{
+				iterator tmp = *this;
+				--(*this);
+				return tmp;
+			}
+
+			const T& operator*() const
+			{
+				if (!valid()) throw invalid_iterator();
+				return cur->data;
+			}
+			const T* operator->() const noexcept
+			{
+				return &cur->data;
+			}
+
+			bool operator==(const const_iterator &rhs) const
+			{
+				return (corres == rhs.corres) && (fa == rhs.fa) && (cur == rhs.cur) && (curPos == rhs.curPos);
+			}
+			bool operator!=(const const_iterator &rhs) const
+			{
+				return !(*this == rhs);
+			}
+		};
 
 	private:
 		iterator find(int num)
 		{
+			num++;
+			if (num == __size + 1) return end();
+			Node *t = head;
+			while (t != nullptr && num > (t->arr->size))
+			{
+				num -= t->arr->size;
+				t = t->next;
+			}
+			LLNode *t2 = t->arr->head;
+			for (int i = 0; i < num - 1; i++, t2 = t2->next);
+			return iterator(t, t2, num - 1, this);
+		}
+
+		const_iterator find(int num) const
+		{
+			if (num == __size + 1) return cend();
 			num++;
 			Node *t = head;
 			while (t != nullptr && num > (t->arr->size))
@@ -368,40 +461,33 @@ namespace sjtu
 				num -= t->arr->size;
 				t = t->next;
 			}
-			if (t == nullptr || num > t->arr->size) return end();
+			if (t == nullptr || num > t->arr->size) return cend();
 			LLNode *t2 = t->arr->head;
 			for (int i = 0; i < num - 1; i++, t2 = t2->next);
-			return iterator(t, t2, num - 1, this);
+			return const_iterator(t, t2, num - 1, this);
 		}
 
 	public:
 		iterator begin()
 		{
-			if (empty()) return iterator(nullptr, nullptr, -1, this);
+			if (empty()) return iterator(nullptr, nullptr, 0, this);
 			return iterator(head, head->arr->head, 0, this);
 		}
-
-		const_iterator cbegin() const
-		{
-			return const_iterator(begin());
+		const_iterator cbegin() const {
+			if (empty()) return const_iterator(nullptr, nullptr, 0, this);
+			return const_iterator(head, head->arr->head, 0, this);
 		}
-
-		iterator end()
-		{
+		iterator end() {
 			return iterator(nullptr, nullptr, 0, this);
 		}
-
-		const_iterator cend() const
-		{
-			return const_iterator(end());
+		const_iterator cend() const {
+			return const_iterator(nullptr, nullptr, 0, this);
 		}
 
 	private:
-		Node* split(Node *cur, int pos)
+		Node* split(Node *cur, int pos, LLNode *t)
 		{
 			Node *newNode = new Node();
-			LLNode *t = cur->arr->head;
-			for (int i = 0; i < pos; i++) t = t->next;
 			newNode->arr->head = t;
 			newNode->arr->tail = cur->arr->tail;
 			cur->arr->tail = t->prev;
@@ -424,13 +510,13 @@ namespace sjtu
 	public:
 		T& at(const int &pos)
 		{
-			if (pos > __size) throw index_out_of_bound();
+			if (pos >= __size || pos < 0) throw index_out_of_bound();
 			return *find(pos);
 		}
 
 		const T& at(const int &pos) const
 		{
-			if (pos > __size) throw index_out_of_bound();
+			if (pos >= __size || pos < 0)  throw index_out_of_bound();
 			return *find(pos);
 		}
 
@@ -446,10 +532,6 @@ namespace sjtu
 			return ret;
 		}
 
-		/**
-		 * access the first / last element
-		 * throw container_is_empty when the container is empty.
-		 */
 		const T& front() const
 		{
 			if (__size == 0) throw container_is_empty();
@@ -462,13 +544,11 @@ namespace sjtu
 			return tail->arr->tail->data;
 		}
 
-		bool empty() const
-		{
+		bool empty() const {
 			return __size == 0;
 		}
 
-		int size() const
-		{
+		int size() const {
 			return __size;
 		}
 
@@ -492,7 +572,8 @@ namespace sjtu
 		{
 			if (__size == 0)
 			{
-				head = tail = nullptr; return;
+				head = tail = nullptr;
+				return;
 			}
 			Node *t = head;
 			while (t->next != nullptr)
@@ -511,15 +592,15 @@ namespace sjtu
 				push_back(value);
 				return iterator(tail, tail->arr->tail, tail->arr->size - 1, this);
 			}
-			if (pos == begin())
+			else if (pos == begin())
 			{
 				push_front(value);
 				return begin();
 			}
 			int r = pos.getIndex();
-			if (!pos.valid()) throw invalid_iterator();
-			Node *t = split(pos.fa, pos.curPos);
-			t->arr->push_front(value);
+			if (!pos.valid() || pos.corres != this) throw invalid_iterator();
+			Node *t = split(pos.fa, pos.curPos, pos.cur);
+			t->prev->arr->push_back(value);
 			__size++;
 			maintain();
 			return find(r);
@@ -528,8 +609,8 @@ namespace sjtu
 		iterator erase(iterator pos)
 		{
 			int r = pos.getIndex();
-			if (!pos.valid()) throw invalid_iterator();
-			Node *t = split(pos.fa, pos.curPos);
+			if (!pos.valid() || pos.corres != this) throw invalid_iterator();
+			Node *t = split(pos.fa, pos.curPos, pos.cur);
 			t->arr->pop_front();
 			__size--;
 			maintain();
@@ -538,11 +619,7 @@ namespace sjtu
 
 		void push_back(const T &value)
 		{
-			if (__size == 0)
-			{
-				tail = new Node();
-				head = tail;
-			}
+			if (empty()) head = tail = new Node();
 			else if (tail->arr->size == ChunkSize)
 			{
 				Node *t = new Node();
@@ -564,11 +641,7 @@ namespace sjtu
 
 		void push_front(const T &value)
 		{
-			if (__size == 0)
-			{
-				tail = new Node();
-				head = tail;
-			}
+			if (empty()) head = tail = new Node();
 			else if (head->arr->size == ChunkSize)
 			{
 				Node *t = new Node();
