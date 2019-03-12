@@ -635,7 +635,13 @@ namespace sjtu
 		{
 			if (empty()) throw container_is_empty();
 			tail->arr->pop_back();
-			if (tail->arr->size == 0) tail = tail->prev;
+			if (tail->arr->size == 0)
+			{
+				Node *tmp = tail->prev;
+				delete tmp;
+				tail = tmp;
+				if (tail != nullptr) tail->next = nullptr;
+			}
 			__size--;
 		}
 
@@ -657,7 +663,13 @@ namespace sjtu
 		{
 			if (empty()) throw container_is_empty();
 			head->arr->pop_front();
-			if (head->arr->size == 0) head = head->next;
+			if (head->arr->size == 0)
+			{
+				Node *tmp = head->next;
+				delete head;
+				head = tmp;
+				if (head != nullptr) head->prev = nullptr;
+			}
 			__size--;
 		}
 	};
