@@ -570,11 +570,6 @@ namespace sjtu
 
 		void maintain()
 		{
-			if (__size == 0)
-			{
-				head = tail = nullptr;
-				return;
-			}
 			Node *t = head;
 			while (t->next != nullptr)
 			{
@@ -582,6 +577,11 @@ namespace sjtu
 				else t = t->next;
 			}
 			tail = t;
+			if (head->arr->size == 0)
+			{
+				delete head;
+				head = tail = nullptr;
+			}
 		}
 
 	public:
@@ -590,7 +590,7 @@ namespace sjtu
 			if (pos == end())
 			{
 				push_back(value);
-				return end();
+				return iterator(tail, tail->arr->tail, tail->arr->size - 1, this);
 			}
 			else if (pos == begin())
 			{
@@ -608,16 +608,16 @@ namespace sjtu
 
 		iterator erase(iterator pos)
 		{
-			if (pos == end() - 1)
+			/*if (pos == end() - 1)
 			{
 				pop_back();
 				return end();
 			}
 			else if (pos == begin())
 			{
-				pop_front();
+				pop_front(value);
 				return begin();
-			}
+			}*/
 			int r = pos.getIndex();
 			if (!pos.valid() || pos.corres != this) throw invalid_iterator();
 			Node *t = split(pos.fa, pos.curPos, pos.cur);
