@@ -638,7 +638,7 @@ namespace sjtu
 			if (tail->arr->size == 0)
 			{
 				Node *tmp = tail->prev;
-				delete tmp;
+				delete tail;
 				tail = tmp;
 				if (tail != nullptr) tail->next = nullptr;
 			}
