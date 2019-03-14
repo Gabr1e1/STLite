@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <cstddef>
+#include <iostream>
 #include "utility.hpp"
 #include "exceptions.hpp"
 
@@ -87,6 +88,7 @@ namespace sjtu
 
 			iterator& operator++()
 			{
+				if (cur == nullptr) throw invalid_iterator();
 				if (cur->right != nullptr)
 				{
 					cur = cur->right;
@@ -111,6 +113,7 @@ namespace sjtu
 			{
 				if (cur == nullptr) //end()
 				{
+					if (corres->empty()) throw invalid_iterator();
 					cur = corres->root;
 					while (cur->right != nullptr) cur = cur->right;
 				}
@@ -158,6 +161,7 @@ namespace sjtu
 		public:
 			const_iterator& operator++()
 			{
+				if (cur == nullptr) throw invalid_iterator();
 				if (cur->right != nullptr)
 				{
 					cur = cur->right;
@@ -180,7 +184,13 @@ namespace sjtu
 
 			const_iterator & operator--()
 			{
-				if (cur->left != nullptr)
+				if (cur == nullptr) //end()
+				{
+					if (corres->empty()) throw invalid_iterator();
+					cur = corres->root;
+					while (cur->right != nullptr) cur = cur->right;
+				}
+				else if (cur->left != nullptr)
 				{
 					cur = cur->left;
 					while (cur->right != nullptr) cur = cur->right;
@@ -348,9 +358,9 @@ namespace sjtu
 						rightRotate(parent);
 						w = parent->left;
 					}
-					else if (getColor(w->left) == BLACK && getColor(w->right) == BLACK)
+					else if (w == nullptr || (getColor(w->left) == BLACK && getColor(w->right) == BLACK))
 					{
-						w->color = RED;
+						if (w != nullptr) w->color = RED;
 						x = parent;
 						parent = parent->father;
 					}
@@ -378,6 +388,7 @@ namespace sjtu
 	private:
 		iterator __insert(const value_type &value)
 		{
+			__size++;
 			Node *z = new Node(value, RED);
 			Node *x = root, *y = nullptr;
 			while (x != nullptr)
@@ -396,6 +407,7 @@ namespace sjtu
 
 		void __erase(iterator pos)
 		{
+			__size--;
 			Node *z = pos.cur, *x, *y;
 			if (z->right == nullptr || z->left == nullptr) y = z;
 			else
@@ -506,14 +518,12 @@ namespace sjtu
 		{
 			iterator t = find(value.first);
 			if (t != end()) return pair<iterator, bool>(t, false);
-			__size++;
 			return pair<iterator, bool>(__insert(value), true);
 		}
 
 		void erase(iterator pos)
 		{
 			if (!pos.checkValid(this)) throw invalid_iterator();
-			__size--;
 			__erase(pos);
 		}
 
