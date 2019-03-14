@@ -111,6 +111,7 @@ namespace sjtu
 
 			iterator & operator--()
 			{
+				if (*this == corres->begin()) throw invalid_iterator();
 				if (cur == nullptr) //end()
 				{
 					if (corres->empty()) throw invalid_iterator();
@@ -184,6 +185,7 @@ namespace sjtu
 
 			const_iterator & operator--()
 			{
+				if (*this == corres->cbegin()) throw invalid_iterator();
 				if (cur == nullptr) //end()
 				{
 					if (corres->empty()) throw invalid_iterator();
@@ -226,8 +228,7 @@ namespace sjtu
 
 		Color getColor(Node *t)
 		{
-			if (t == nullptr || t->color == BLACK) return BLACK;
-			else return RED;
+			return (t == nullptr || t->color == BLACK) ? BLACK : RED;
 		}
 
 	private:
@@ -389,7 +390,7 @@ namespace sjtu
 		iterator __insert(const value_type &value)
 		{
 			__size++;
-			Node *z = new Node(value, RED);
+			Node *z = new Node(value);
 			Node *x = root, *y = nullptr;
 			while (x != nullptr)
 			{
@@ -405,6 +406,48 @@ namespace sjtu
 			return iterator(z, this);
 		}
 
+		inline void __change(Node *a, Node *b) //change relatives with a to with b
+		{
+			if (a->left != nullptr) a->left->father = b;
+			if (a->right != nullptr) a->right->father = b;
+			if (a->father != nullptr)
+			{
+				if (a->father->left == a) a->father->left = b;
+				else a->father->right = b;
+			}
+		}
+
+		inline void __swapNode(Node *a, Node *b) //swap but keep color unchanged
+		{
+			Color ac = a->color, bc = b->color;
+			a->color = bc, b->color = ac;
+			//special case where a is the father of b and b is the left son
+			if (b->father == a)
+			{
+				Node *c = a->father, *d = a->left, *e = b->right;
+				b->father = c;
+				if (c != nullptr)
+				{
+					if (a->father->left == a) c->left = b;
+					else c->right = b;
+				}
+				b->left = d;
+				if (d != nullptr) d->father = b;
+				b->right = a; a->father = b;
+				a->right = e;
+				if (e != nullptr) e->father = a;
+				a->left = nullptr;
+				return;
+			}
+			//deal with relatives
+			__change(a, b);
+			__change(b, a);
+			//do the swap
+			Node *left = b->left, *right = b->right, *father = b->father;
+			b->left = a->left, b->right = a->right, b->father = a->father;
+			a->left = left, a->right = right, a->father = father;
+		}
+
 		void __erase(iterator pos)
 		{
 			__size--;
@@ -414,6 +457,9 @@ namespace sjtu
 			{
 				y = z->right;
 				while (y->left != nullptr) y = y->left;
+				if (z == root) root = y;
+				__swapNode(z, y);
+				y = z;
 			}
 
 			if (y->left != nullptr) x = y->left;
@@ -424,15 +470,7 @@ namespace sjtu
 			else if (isLeftSon(y)) y->father->left = x;
 			else y->father->right = x;
 
-			if (y != z) //the case where y is the successor of z
-			{
-				z->kvpair.~pair();
-				new(&z->kvpair) value_type(y->kvpair);
-			}
-			if (y->color == BLACK)
-			{
-				eraseFixup(x, y->father);
-			}
+			if (y->color == BLACK) eraseFixup(x, y->father);
 			delete y;
 		}
 
@@ -449,14 +487,16 @@ namespace sjtu
 	public:
 		iterator begin()
 		{
+			if (empty()) return end();
 			Node *leftMost = root;
-			while (leftMost != nullptr && leftMost->left != nullptr) leftMost = leftMost->left;
+			while (leftMost->left != nullptr) leftMost = leftMost->left;
 			return iterator(leftMost, this);
 		}
 		const_iterator cbegin() const
 		{
+			if (empty()) return cend();
 			Node *leftMost = root;
-			while (leftMost != nullptr && leftMost->left != nullptr) leftMost = leftMost->left;
+			while (leftMost->left != nullptr) leftMost = leftMost->left;
 			return const_iterator(leftMost, this);
 		}
 
@@ -469,12 +509,9 @@ namespace sjtu
 			Node *t = root;
 			while (t != nullptr)
 			{
-				if (!(Compare()(t->kvpair.first, key) || Compare()(key, t->kvpair.first)))
-				{
-					return iterator(t, this);
-				}
 				if (Compare()(key, t->kvpair.first)) t = t->left;
-				else t = t->right;
+				else if (Compare()(t->kvpair.first, key)) t = t->right;
+				else return iterator(t, this);
 			}
 			return end();
 		}
@@ -483,12 +520,9 @@ namespace sjtu
 			Node *t = root;
 			while (t != nullptr)
 			{
-				if (!(Compare()(t->kvpair.first, key) || Compare()(key, t->kvpair.first)))
-				{
-					return const_iterator(t, this);
-				}
 				if (Compare()(key, t->kvpair.first)) t = t->left;
-				else t = t->right;
+				else if (Compare()(t->kvpair.first, key)) t = t->right;
+				else return const_iterator(t, this);
 			}
 			return cend();
 		}
@@ -497,13 +531,13 @@ namespace sjtu
 		{
 			iterator iter = find(key);
 			if (iter == end()) throw index_out_of_bound();
-			else return iter->second;
+			return iter->second;
 		}
 		const T& at(const Key &key) const
 		{
 			const_iterator iter = find(key);
 			if (iter == cend()) throw index_out_of_bound();
-			else return iter->second;
+			return iter->second;
 		}
 
 		T& operator[](const Key &key)
@@ -518,7 +552,7 @@ namespace sjtu
 		{
 			iterator t = find(value.first);
 			if (t != end()) return pair<iterator, bool>(t, false);
-			return pair<iterator, bool>(__insert(value), true);
+			else return pair<iterator, bool>(__insert(value), true);
 		}
 
 		void erase(iterator pos)
