@@ -326,9 +326,9 @@ namespace sjtu
 						leftRotate(parent);
 						w = parent->right;
 					}
-					else if (w == nullptr || (getColor(w->left) == BLACK && getColor(w->right) == BLACK))
+					else if ((getColor(w->left) == BLACK && getColor(w->right) == BLACK))
 					{
-						if (w) w->color = RED;
+						w->color = RED;
 						x = parent;
 						parent = parent->father;
 					}
@@ -359,9 +359,9 @@ namespace sjtu
 						rightRotate(parent);
 						w = parent->left;
 					}
-					else if (w == nullptr || (getColor(w->left) == BLACK && getColor(w->right) == BLACK))
+					else if ((getColor(w->left) == BLACK && getColor(w->right) == BLACK))
 					{
-						if (w != nullptr) w->color = RED;
+						w->color = RED;
 						x = parent;
 						parent = parent->father;
 					}
