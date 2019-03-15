@@ -220,9 +220,8 @@ namespace sjtu
 		};
 
 	private:
-		static bool isLeftSon(Node *t)
+		static inline bool isLeftSon(Node *t)
 		{
-			if (t == nullptr) return true; //For function eraseFixup()
 			return t->father != nullptr && t->father->left == t;
 		}
 
@@ -311,12 +310,12 @@ namespace sjtu
 			root->color = BLACK;
 		}
 
-		void eraseFixup(Node *x, Node *parent)
+		void eraseFixup(Node *x, Node *parent, bool isLeft)
 		{
 			Node *w;
 			while (x != root && getColor(x) == BLACK)
 			{
-				if (isLeftSon(x))
+				if ((x == nullptr && isLeft) || (x != nullptr && isLeftSon(x)))
 				{
 					w = parent->right;
 					if (getColor(w) == RED)
@@ -466,11 +465,12 @@ namespace sjtu
 			else x = y->right;
 			if (x != nullptr) x->father = y->father;
 
+			bool isLeft = isLeftSon(y);
 			if (y->father == nullptr) root = x; //y is the root
 			else if (isLeftSon(y)) y->father->left = x;
 			else y->father->right = x;
 
-			if (y->color == BLACK) eraseFixup(x, y->father);
+			if (y->color == BLACK) eraseFixup(x, y->father, isLeft);
 			delete y;
 		}
 

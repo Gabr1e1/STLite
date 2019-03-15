@@ -23,7 +23,7 @@ private:
 	size_t __size;
 
 private:
-	void clear(node *cur)
+	void __clear(node *cur)
 	{
 		if (cur == nullptr) return;
 		if (cur->firstChild != nullptr)
@@ -34,7 +34,7 @@ private:
 				if (u->father == cur)
 				{
 					node *tmp = u->rightBrother;
-					clear(u);
+					__clear(u);
 					u = tmp;
 				}
 			}
@@ -43,7 +43,7 @@ private:
 		__size = 0;
 	}
 
-	void addAll(priority_queue *que, node *cur)
+	void __addAll(priority_queue *que, node *cur)
 	{
 		que->push(cur->val);
 		if (cur->firstChild != nullptr)
@@ -51,7 +51,7 @@ private:
 			node *u = cur->firstChild;
 			while (u != nullptr)
 			{
-				addAll(que, u);
+				__addAll(que, u);
 				u = u->rightBrother;
 			}
 		}
@@ -62,12 +62,12 @@ public:
 
 	priority_queue(const priority_queue &other) : root(nullptr), __size(0)
 	{
-		addAll(this, other.root);
+		__addAll(this, other.root);
 	}
 
 	~priority_queue() 
 	{
-		clear(root);
+		__clear(root);
 		root = nullptr;
 		__size = 0;
     }
@@ -75,11 +75,11 @@ public:
 	priority_queue &operator=(const priority_queue &other) 
 	{
 		if (this == &other) return *this;
-		clear(root);
+		__clear(root);
 		root = nullptr;
 		__size = 0;
 		
-		addAll(this, other.root);
+		__addAll(this, other.root);
 		return *this;
 	}
 
@@ -110,6 +110,9 @@ private:
 	}
 
 public:
+	size_t size() const { return __size; }
+	bool empty() const { return __size == 0; }
+
 	const T & top() const
     {
 		if (empty()) throw container_is_empty();
@@ -162,16 +165,6 @@ public:
 			tail->tmpPrev = next;
 		}
 		root = tail;
-	}
-
-	size_t size() const 
-	{
-		return __size;
-	}
-
-	bool empty() const 
-	{
-		return __size == 0;
 	}
 
 	void merge(priority_queue &other) 
