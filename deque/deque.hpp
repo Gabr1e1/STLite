@@ -100,7 +100,7 @@ namespace sjtu
 		};
 
 	private:
-		const int ChunkSize = 500;
+		const int ChunkSize = 1024;
 		struct Node
 		{
 			LinkedList *arr;
