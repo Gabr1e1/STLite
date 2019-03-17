@@ -100,7 +100,7 @@ namespace sjtu
 		};
 
 	private:
-		const int ChunkSize = 1024;
+		const int ChunkSize = 512;
 		struct Node
 		{
 			LinkedList *arr;
@@ -192,6 +192,16 @@ namespace sjtu
 			iterator operator+(const int &n) const
 			{
 				if (n == 0) return *this;
+				if (n == 1)
+				{
+					iterator it = *this;
+					return ++it;
+				}
+				if (n == -1)
+				{
+					iterator it = *this;
+					return --it;
+				}
 				return corres->find(getIndex() + n);
 			}
 
@@ -482,6 +492,7 @@ namespace sjtu
 			cur->arr->size = pos;
 
 			newNode->next = cur->next;
+			if (newNode->next == nullptr) tail = newNode;
 			if (cur->next != nullptr) cur->next->prev = newNode;
 			cur->next = newNode;
 			newNode->prev = cur;
@@ -528,15 +539,19 @@ namespace sjtu
 			delete b;
 		}
 
-		void maintain()
+		void maintain(Node *t)
 		{
-			Node *t = head;
+			if (t == nullptr) t = head;
 			while (t->next != nullptr)
 			{
 				if (t->arr->size + t->next->arr->size <= ChunkSize) merge(t, t->next);
-				else t = t->next;
+				else
+				{
+					t = t->next;
+					break;
+				}
 			}
-			tail = t;
+			if (t->next == nullptr) tail = t;
 			if (head->arr->size == 0) delete head, head = tail = nullptr;
 		}
 
@@ -559,7 +574,7 @@ namespace sjtu
 			Node *t = split(pos.fa, pos.curPos, pos.cur);
 			t->prev->arr->push_back(value);
 			__size++;
-			maintain();
+			maintain(t->prev);
 			return find(r);
 		}
 
@@ -581,7 +596,7 @@ namespace sjtu
 			Node *t = split(pos.fa, pos.curPos, pos.cur);
 			t->arr->pop_front();
 			__size--;
-			maintain();
+			maintain(t->prev);
 			return find(r);
 		}
 
